@@ -1,0 +1,28 @@
+---
+- hosts: all
+  tasks:
+ 
+  - include: initial_setup_linux.yml
+
+  - include: install_preinstall_12cR1.yml
+ 
+  - include: setup_u01.yml
+
+  - name: check inventory for Ansible_12102 home installation
+    command: grep 'HOME NAME="Ansible_12102"' /u01/app/oraInventory/ContentsXML/inventory.xml
+    become: true
+    become_user: oracle
+    ignore_errors: True
+    register: home_installed
+
+  - include: install_oracle_12102.yml
+    when: "home_installed.rc != 0"
+
+  - include: setup_oradata.yml
+
+  - name: check databases in /etc/oratab
+    command: awk 'BEGIN{ FS=":" } !/^#.*/ && /.*:.*:.*/ { print $1 }' /etc/oratab
+    register: oratab_databases
+
+  - include: install_database_filesystem.yml
+    when: "'{{ database_name }}' not in oratab_databases.stdout" 

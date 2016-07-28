@@ -1,0 +1,90 @@
+---
+
+- name: check u01 free disk space
+  action: shell df -P /u01 | awk 'END { print $4 }'
+  register: u01size
+  failed_when: u01size.stdout|int < 8 * 1024 * 1024
+
+- name: check tmp free disk space
+  action: shell df -P /tmp | awk 'END { print $4 }'
+  register: tmpsize
+  failed_when: tmpsize.stdout|int < 1 * 1024 * 1024
+
+- name: create directory for installation files
+  action: file dest=/u01/install state=directory owner=oracle group=oinstall
+  become: true
+  
+- name: copy getMOSPatch.sh script
+  copy: src=files/getMOSPatch.sh dest=/u01/install owner=oracle group=oinstall mode=0700
+  become: true
+
+- name: set getMOSPatch.sh config
+  shell: echo "226P;Linux x86-64" > /u01/install/.getMOSPatch.sh.cfg
+  become: true
+  become_user: oracle
+
+- name: yum install perl for getMOSPatch.sh and unzip
+  yum: name={{ item }} state=installed
+  become: true
+  with_items:
+    - perl
+    - unzip
+
+- name: check for first patch file
+  stat: path=/u01/install/p21419221_121020_Linux-x86-64_1of10.zip get_checksum=no get_md5=no
+  register: first_patch_file
+  become: true
+  become_user: oracle
+
+- name: download first patch file
+  shell: 'cd /u01/install; export mosUser={{ mosuser }}; export mosPass={{ mospass }}; export DownList=2; ./getMOSPatch.sh patch=21419221'
+  become: true
+  become_user: oracle
+  when: not first_patch_file.stat.exists
+
+- name: check for second patch file
+  stat: path=/u01/install/p21419221_121020_Linux-x86-64_2of10.zip get_checksum=no get_md5=no
+  register: second_patch_file
+  become: true
+  become_user: oracle
+
+- name: download second patch file
+  shell: 'cd /u01/install; export mosUser={{ mosuser }}; export mosPass={{ mospass }}; export DownList=3; ./getMOSPatch.sh patch=21419221'
+  become: true
+  become_user: oracle
+  when: not second_patch_file.stat.exists
+
+- name: does the /u01/install/database directory exist
+  stat: path=/u01/install/database get_checksum=no get_md5=no
+  register: unzip_dir
+  become: true
+  become_user: oracle
+ 
+- name: unzip installation media
+  unarchive: copy=no src=/u01/install/{{ item }} dest=/u01/install
+  become: true
+  become_user: oracle
+  when: not unzip_dir.stat.exists
+  with_items:
+    - p21419221_121020_Linux-x86-64_1of10.zip
+    - p21419221_121020_Linux-x86-64_2of10.zip
+
+- name: install oracle 12.1.0.2
+  shell: '/u01/install/database/runInstaller -silent -force -waitforcompletion -ignoresysprereqs oracle.install.option=INSTALL_DB_SWONLY UNIX_GROUP_NAME=oinstall INVENTORY_LOCATION=/u01/app/oraInventory ORACLE_HOME=/u01/app/oracle/product/12.1.0.2/dbhome_1 ORACLE_HOME_NAME="Ansible_12102" ORACLE_BASE=/u01/app/oracle oracle.install.db.InstallEdition=EE oracle.install.db.DBA_GROUP=dba oracle.install.db.OPER_GROUP=dba oracle.install.db.BACKUPDBA_GROUP=dba oracle.install.db.DGDBA_GROUP=dba oracle.install.db.KMDBA_GROUP=dba DECLINE_SECURITY_UPDATES=true'
+  become: true
+  become_user: oracle
+  register: database_install
+  failed_when: "'The installation of Oracle Database 12c was successful.' not in database_install.stdout"
+
+- name: run orainstRoot.sh
+  action: shell /u01/app/oraInventory/orainstRoot.sh
+  when: "'/u01/app/oraInventory/orainstRoot.sh' in database_install.stdout"
+  become: true
+
+- name: run root.sh
+  action: shell /u01/app/oracle/product/12.1.0.2/dbhome_1/root.sh -silent
+  become: true
+
+- name: clean up install directory
+  file: path=/u01/install state=absent 
+  become: true

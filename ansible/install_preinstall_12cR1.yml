@@ -1,0 +1,17 @@
+---
+
+- name: install oracle preinstall 12cR1 package
+  yum: name=oracle-rdbms-server-12cR1-preinstall.x86_64 state=present
+  become: true
+  register: install_oracle_preinstall
+
+- name: set oracle user to default password
+  # password generated via:
+  # python -c "from passlib.hash import sha512_crypt; print sha512_crypt.encrypt(raw_input('welcome1'))"
+  user: name=oracle password=$6$rounds=40000$oYD1j8QODUhSwJxH$OZRH3Mmg4P0sSGd6t9PdmwsVnGL0n/8U/m6V5aGr1kefOg9wXW0xzlNsvIqhjXA2WnMl5AtXuy/QENGoWiOXM1
+  become: true
+  when: install_oracle_preinstall.changed
+
+- name: copy public key to authorized_key file of oracle
+  authorized_key: user=oracle key="{{ lookup('file','/Users/fritshoogland/.ssh/id_dsa.pub') }}"
+  become: true

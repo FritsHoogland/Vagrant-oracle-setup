@@ -1,0 +1,17 @@
+---
+
+- name: upgrade all packages
+  yum: name=* state=latest
+  become: true
+
+- name: install python-selinux
+  yum: name=libselinux-python state=installed
+  become: true
+
+- name: disable selinux
+  selinux: state=disabled
+  become: true
+
+- name: copy public key to authorized_key file of root
+  authorized_key: user=root key="{{ lookup('file','~/.ssh/id_dsa.pub') }}"
+  become: true
