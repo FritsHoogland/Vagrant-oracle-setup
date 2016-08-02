@@ -13,5 +13,5 @@
   when: install_oracle_preinstall.changed
 
 - name: copy public key to authorized_key file of oracle
-  authorized_key: user=oracle key="{{ lookup('file','/Users/fritshoogland/.ssh/id_dsa.pub') }}"
+  authorized_key: user=oracle key="{{ lookup('file','~/.ssh/id_dsa.pub') }}"
   become: true
