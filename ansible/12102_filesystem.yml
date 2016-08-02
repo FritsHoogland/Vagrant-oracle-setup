@@ -5,9 +5,20 @@
   - include: initial_setup_linux.yml
 
   - include: install_preinstall_12cR1.yml
- 
-  - include: setup_u01.yml
+#
+# /u01
+#
+  - name: check if /u01 is already setup as a mountpoint
+    command: mountpoint -q /u01
+    register: is_u01_setup
+    ignore_errors: true
 
+  - include: setup_u01.yml
+    when: is_u01_setup.rc != 0 
+
+#
+# oracle database install
+#
   - name: check inventory for Ansible_12102 home installation
     command: grep 'HOME NAME="Ansible_12102"' /u01/app/oraInventory/ContentsXML/inventory.xml
     become: true
@@ -18,8 +29,21 @@
   - include: install_oracle_12102.yml
     when: "home_installed.rc != 0"
 
-  - include: setup_oradata.yml
+#
+# oradata filesystem
+#
+  - name: check if /u01/app/oracle/oradata is setup and mounted
+    command: mountpoint -q /u01/app/oracle/oradata
+    register: is_oradata_setup
+    become: yes
+    ignore_errors: true
 
+  - include: setup_oradata.yml
+    when: is_oradata_setup.rc != 0
+
+# 
+# check for the database in oratab. create it if it is not listed.
+#
   - name: check databases in /etc/oratab
     command: awk 'BEGIN{ FS=":" } !/^#.*/ && /.*:.*:.*/ { print $1 }' /etc/oratab
     register: oratab_databases

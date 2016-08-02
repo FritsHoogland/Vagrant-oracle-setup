@@ -7,15 +7,3 @@
   shell: "export ORACLE_HOME={{ oracle_home }}; {{ oracle_home }}/bin/dbca -silent -createdatabase -templatename /home/oracle/create_db_{{ database_name }}.dbt -gdbname {{ database_name }} -sid {{ database_name }} -syspassword {{ global_password }} -systempassword {{ global_password }} -dbsnmppassword {{ global_password }}"
   become: true
   become_user: oracle
-
-- name: check for datapatch
-  stat: path={{ oracle_home }}/OPatch/datapatch
-  become: true
-  become_user: oracle
-  register: datapatch
-
-- name: run datapatch
-  shell: "export ORACLE_HOME={{ oracle_home }}; export ORACLE_SID={{ database_name}}; cd $ORACLE_HOME/OPatch; ./datapatch"
-  become: true
-  become_user: oracle
-  when: datapatch.stat.exists == True

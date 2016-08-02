@@ -46,7 +46,6 @@ Vagrant.configure("2") do |config|
       database_name: "testdb",
       global_password: "oracle",
       asm_create_file_dest: "DATA",
-      asm_recovery_file_dest: "DATA",
       db_create_file_dest: "/u01/app/oracle/oradata"
     }
     ansible.playbook = "ansible/12102_filesystem.yml"

@@ -70,7 +70,7 @@
     - p21419221_121020_Linux-x86-64_2of10.zip
 
 - name: install oracle 12.1.0.2
-  shell: '/u01/install/database/runInstaller -silent -force -waitforcompletion -ignoresysprereqs oracle.install.option=INSTALL_DB_SWONLY UNIX_GROUP_NAME=oinstall INVENTORY_LOCATION=/u01/app/oraInventory ORACLE_HOME=/u01/app/oracle/product/12.1.0.2/dbhome_1 ORACLE_HOME_NAME="Ansible_12102" ORACLE_BASE=/u01/app/oracle oracle.install.db.InstallEdition=EE oracle.install.db.DBA_GROUP=dba oracle.install.db.OPER_GROUP=dba oracle.install.db.BACKUPDBA_GROUP=dba oracle.install.db.DGDBA_GROUP=dba oracle.install.db.KMDBA_GROUP=dba DECLINE_SECURITY_UPDATES=true'
+  shell: '/u01/install/database/runInstaller -silent -force -waitforcompletion -ignoresysprereqs oracle.install.option=INSTALL_DB_SWONLY UNIX_GROUP_NAME=oinstall INVENTORY_LOCATION=/u01/app/oraInventory ORACLE_HOME=/u01/app/oracle/product/12.1.0.2/dbhome_1 ORACLE_HOME_NAME="Ansible_oh_12102" ORACLE_BASE=/u01/app/oracle oracle.install.db.InstallEdition=EE oracle.install.db.DBA_GROUP=dba oracle.install.db.OPER_GROUP=dba oracle.install.db.BACKUPDBA_GROUP=dba oracle.install.db.DGDBA_GROUP=dba oracle.install.db.KMDBA_GROUP=dba DECLINE_SECURITY_UPDATES=true'
   become: true
   become_user: oracle
   register: database_install
