@@ -1,53 +1,15 @@
 ---
-
-- name: test if /dev/sdc is a PV
-  shell: pvdisplay -s /dev/sdc
+- name: extend volume group vg_oracle with /dev/sdc
+  lvg: vg=vg_oracle pvs=/dev/sdb,/dev/sdc
   become: true
-  register: is_sdc_pv
-  ignore_errors: True
 
-- name: make /dev/sdc a PV
-  shell: pvcreate /dev/sdc
+- name: create logical volume lv_oradata in vg_oracle
+  lvol: vg=vg_oracle lv=lv_oradata size=35g
   become: true
-  when: "is_sdc_pv.rc != 0"
 
-- name: test if vg_oracle VG exists
-  shell: vgdisplay vg_oracle
+- name: create xfs filesystem in lv_oradata
+  filesystem: fstype=xfs dev=/dev/vg_oracle/lv_oradata
   become: true
-  register: vg_oracle_exists
-  ignore_errors: True
-
-- name: create VG vg_oracle
-  shell: vgcreate vg_oracle /dev/sdc
-  become: true
-  when: "vg_oracle_exists.rc != 0"
-
-- name: add /dev/sdc to vg_oracle
-  shell: vgextend vg_oracle /dev/sdc
-  become: true
-  when: "is_sdc_pv.rc != 0"
-
-- name: test if lv_oradata LV exists
-  shell: lvdisplay /dev/vg_oracle/lv_oradata
-  become: true
-  register: lv_oracle_exists
-  ignore_errors: True
-
-- name: create LV lv_oradata
-  shell: lvcreate -n lv_oradata -L 20G /dev/vg_oracle
-  become: true
-  when: "lv_oracle_exists.rc != 0" 
-
-- name: test if lv_oracle contains a xfs filesystem
-  shell: blkid /dev/vg_oracle/lv_oradata
-  become: true
-  register: blkid_on_lv_oradata
-  ignore_errors: True
-
-- name: create xfs filesystem on lv_oracle
-  shell: mkfs.xfs /dev/vg_oracle/lv_oradata
-  become: true
-  when: "'TYPE=\"xfs\"' not in blkid_on_lv_oradata.stdout"
 
 - name: mount filesystem to /u01/app/oracle/oradata
   mount: name=/u01/app/oracle/oradata src=/dev/vg_oracle/lv_oradata state=mounted fstype=xfs

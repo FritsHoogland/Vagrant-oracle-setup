@@ -8,13 +8,7 @@
 #
 # /u01
 #
-  - name: check if /u01 is already setup as a mountpoint
-    command: mountpoint -q /u01
-    register: is_u01_setup
-    ignore_errors: true
-
   - include: setup_u01.yml
-    when: is_u01_setup.rc != 0 
 
 #
 # oracle database install
@@ -32,14 +26,7 @@
 #
 # oradata filesystem
 #
-  - name: check if /u01/app/oracle/oradata is setup and mounted
-    command: mountpoint -q /u01/app/oracle/oradata
-    register: is_oradata_setup
-    become: yes
-    ignore_errors: true
-
   - include: setup_oradata.yml
-    when: is_oradata_setup.rc != 0
 
 # 
 # check for the database in oratab. create it if it is not listed.
